@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from django.http import HttpResponse
-from .forms import CustomUserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
+from django.contrib.auth.hashers import make_password
 import json
 
 class LoginView(View):
@@ -21,10 +21,19 @@ class SignUp(View):
     
     def post(self, request):
         data = request.POST
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)  # Log the user in after registration
-            return redirect('/auth/login')  # Redirect to your home page or any desired page
-        else:
-            return HttpResponse("Sign Up Failed")
+        full_name = data['full_name']
+        email = data['email']
+        phone = data['phone']
+        password = data['password']
+
+        User = get_user_model()
+        user = User.objects.create_user(
+            full_name=full_name,
+            email = email,
+            phone = phone,
+            password = make_password(password),
+        )
+
+        user.backends = 'django.contrib.auth.backends.ModelBackend'
+        login(request, user)
+        return HttpResponse("User created successfully")
